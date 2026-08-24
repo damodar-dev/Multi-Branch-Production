@@ -1,12 +1,74 @@
-pipline {
-  agent any
-  opstions {
-    desibleConcurrentBuilds
-  }
-  environment {
-    DOCKER_IMAGE = "damodar777/Multi-branch-flask-app:latest"
-    GITHUB_USERNAME = "damodar-dev"
-    GIHUB_EMAIL = "damodarsampatirao@gmail.com"
-  }
-  sta
+pipeline {
+    agent any
+
+    options {
+        disableConcurrentBuilds()
+    }
+
+    environment {
+        DOCKER_IMAGE = "damodar777/multi-branch-flask-app"
+        GITHUB_USERNAME = "damodar-dev"
+        GITHUB_EMAIL = "damodarsampatirao@gmail.com"
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Build and Push Image') {
+            steps {
+                script {
+                    def IMAGE_TAG = "build-${BUILD_NUMBER}"
+                    env.IMAGE_TAG = IMAGE_TAG
+
+                    withCredentials([usernamePassword(
+                        credentialsId: 'docker-cred',
+                        usernameVariable: 'DOCKER_USERNAME',
+                        passwordVariable: 'DOCKER_PASSWORD'
+                    )]) {
+                        sh """
+                            docker build -t ${DOCKER_IMAGE}:${IMAGE_TAG} .
+                            echo \$DOCKER_PASSWORD | docker login -u \$DOCKER_USERNAME --password-stdin
+                            docker push ${DOCKER_IMAGE}:${IMAGE_TAG}
+                            docker logout
+                        """
+                    }
+                }
+            }
+        }
+
+        stage('Update to k8s') {
+            when {
+                branch 'main'
+            }
+
+            steps {
+                withCredentials([usernamePassword(
+                    credentialsId: "github-cred",
+                    usernameVariable: "GIT_USER",
+                    passwordVariable: "GITHUB_TOKEN"
+                )]) {
+                    sh """
+                        git config --global user.name "${GIT_USER}"
+                        git config --global user.email "${GITHUB_EMAIL}"
+
+                        git fetch origin main
+                        git checkout main
+                        git reset --hard origin/main
+
+                        sed -i 's|image:.*|image: ${DOCKER_IMAGE}:${IMAGE_TAG}|' k8s/deployment.yaml
+
+                        git add k8s/deployment.yaml
+
+                        git diff --cached --quiet || git commit -m "Update image to ${DOCKER_IMAGE}:${IMAGE_TAG}"
+
+                        git push https://${GIT_USER}:${GITHUB_TOKEN}@github.com/${GITHUB_USERNAME}/Multi-branch-flask-app.git main
+                    """
+                }
+            }
+        }
+    }
 }
