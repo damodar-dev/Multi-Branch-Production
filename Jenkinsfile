@@ -59,17 +59,16 @@ pipeline {
                         git checkout main
                         git reset --hard origin/main
 
-                        sed -i 's|image:.*|image: ${DOCKER_IMAGE}:${IMAGE_TAG}|' k8s/deployment.yaml
+                        sed -i 's|image:.*|image: ${DOCKER_IMAGE}:${IMAGE_TAG}|' k8s/deployment.yml
 
-                        git add k8s/deployment.yaml
+                        git add k8s/deployment.yml
 
                         git diff --cached --quiet || git commit -m "Update image to ${DOCKER_IMAGE}:${IMAGE_TAG}"
 
-                        git push https://${GIT_USER}:${GITHUB_TOKEN}@github.com/${GITHUB_USERNAME}/Multi-branch-flask-app.git main
+                        git push https://${GIT_USER}:${GITHUB_TOKEN}@github.com/${GITHUB_USERNAME}/Multi-Branch-Production.git main
                     """
                 }
             }
         }
     }
-    
 }
