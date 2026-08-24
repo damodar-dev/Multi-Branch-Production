@@ -1,0 +1,12 @@
+pipline {
+  agent any
+  opstions {
+    desibleConcurrentBuilds
+  }
+  environment {
+    DOCKER_IMAGE = "damodar777/Multi-branch-flask-app:latest"
+    GITHUB_USERNAME = "damodar-dev"
+    GIHUB_EMAIL = "damodarsampatirao@gmail.com"
+  }
+  sta
+}

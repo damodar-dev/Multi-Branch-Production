@@ -1,0 +1,19 @@
+ apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: product-env-app
+spec:
+  replicas: 5
+  selector:
+    matchLabels:
+      app: product-env-app
+  template:
+    metadata:
+      labels:
+        app: product-env-app
+    spec:
+      containers:
+        - name: product-env-app
+          image: damodar777/
+          ports:
+            - containerPort: 5000
